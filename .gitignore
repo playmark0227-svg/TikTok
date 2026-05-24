@@ -1,0 +1,86 @@
+# 環境変数・認証情報
+.env
+.env.local
+.env.*.local
+firebase-credentials.json
+*.pem
+*.key
+credentials/
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 仮想環境
+venv/
+env/
+ENV/
+.venv/
+.python-version
+
+# ローカル一時保管(.gitkeep は追跡)
+storage_local/**/*
+!storage_local/**/.gitkeep
+
+# ログ(.gitkeep は追跡)
+logs/*
+!logs/.gitkeep
+
+# テスト・カバレッジ
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# 型チェック
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# アセット(BGM等は別途配置、コミットしない)
+assets/bgm/**/*.mp3
+assets/bgm/**/*.wav
+assets/bgm/**/*.m4a
+
+# 一時動画
+*.mp4.tmp
+*.mov.tmp
+
+# launchd 実行ログ
+launchd/*.log

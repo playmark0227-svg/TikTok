@@ -1,0 +1,36 @@
+# AI / API クライアント
+anthropic>=0.40.0
+google-genai>=1.0.0
+python-amazon-paapi>=5.0.0
+
+# Discord
+discord.py>=2.4.0
+
+# Firebase
+firebase-admin>=6.5.0
+
+# 動画処理
+ffmpeg-python>=0.2.0
+
+# 設定 / バリデーション
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+
+# HTTP / 非同期
+httpx>=0.27.0
+aiohttp>=3.9.0
+tenacity>=8.0.0
+
+# ロギング
+structlog>=24.0.0
+
+# 開発ツール
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+black>=24.0.0
+ruff>=0.5.0
+mypy>=1.10.0

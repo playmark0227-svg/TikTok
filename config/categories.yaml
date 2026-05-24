@@ -1,0 +1,62 @@
+# 対象ジャンル定義
+# Amazon / 楽天 双方で使用するカテゴリと、API固有のIDマッピング
+
+categories:
+  - name: 家電
+    keywords:
+      - 家電
+      - 生活家電
+      - キッチン家電
+    amazon_browse_node_id: "3210981"  # 家電
+    rakuten_genre_id: 100026          # 家電
+    weight: 1.0
+
+  - name: コスメ
+    keywords:
+      - スキンケア
+      - メイク
+      - コスメ
+      - 美容
+    amazon_browse_node_id: "52391051"  # ビューティー
+    rakuten_genre_id: 100939            # 美容・コスメ・香水
+    weight: 1.2
+
+  - name: キッチン
+    keywords:
+      - キッチン用品
+      - 調理器具
+      - 食器
+    amazon_browse_node_id: "3839151"   # ホーム&キッチン
+    rakuten_genre_id: 100283            # キッチン用品・食器・調理器具
+    weight: 0.9
+
+  - name: 健康
+    keywords:
+      - 健康
+      - サプリメント
+      - フィットネス
+    amazon_browse_node_id: "160384011" # ドラッグストア
+    rakuten_genre_id: 551167            # ダイエット・健康
+    weight: 1.0
+
+  - name: ガジェット
+    keywords:
+      - ガジェット
+      - スマートデバイス
+      - PC周辺機器
+    amazon_browse_node_id: "2151981051" # 家電&カメラ
+    rakuten_genre_id: 100027             # スマートフォン・タブレット
+    weight: 1.3
+
+# スコアリングの重み(scorer.py で使用)
+scoring_weights:
+  review_count: 0.30
+  rating: 0.20
+  price_fit: 0.10
+  novelty: 0.15
+  ranking: 0.25
+
+# 価格帯フィット用(中心値)
+price_fit:
+  ideal_min: 2000
+  ideal_max: 10000
