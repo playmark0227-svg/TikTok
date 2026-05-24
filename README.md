@@ -55,6 +55,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> **注**: 一部の Debian / Ubuntu 環境では、システムの PyJWT と衝突して失敗することがあります。
+> その場合は `pip install --ignore-installed PyJWT -r requirements.txt` を実行してください。
+>
+> **FFmpeg のインストール**: 動画編集に必須です。
+> - macOS: `brew install ffmpeg`
+> - Ubuntu/Debian: `sudo apt-get install ffmpeg`
+
 ### 3. 環境変数設定
 
 `.env.example` を `.env` にコピーし、各種 API キーを記入する。
@@ -140,14 +147,21 @@ tiktok-auto-poster/
 ## 実装フェーズ
 
 - [x] Phase 0: プロジェクト初期化
-- [ ] Phase 1: 商品選定モジュール
-- [ ] Phase 2: 企画生成モジュール
-- [ ] Phase 3: 動画生成 + 編集モジュール
-- [ ] Phase 4: Firebase 連携
-- [ ] Phase 5: Discord Bot
-- [ ] Phase 6: TikTok 投稿
-- [ ] Phase 7: パイプライン統合
-- [ ] Phase 8: 運用設定
+- [x] Phase 1: 商品選定モジュール
+- [x] Phase 2: 企画生成モジュール
+- [x] Phase 3: 動画生成 + 編集モジュール
+- [x] Phase 4: Firebase 連携
+- [x] Phase 5: Discord Bot
+- [x] Phase 6: TikTok 投稿
+- [x] Phase 7: パイプライン統合
+- [x] Phase 8: 運用設定
+
+## ドキュメント
+
+- [運用マニュアル](docs/operation_manual.md)
+- [プライバシーポリシー(日本語)](docs/privacy_policy_ja.md)
+- [Privacy Policy (English)](docs/privacy_policy_en.md)
+- [TikTok 審査申請文](docs/tiktok_app_review.md)
 
 ## ライセンス
 
