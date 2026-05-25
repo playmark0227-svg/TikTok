@@ -1,0 +1,33 @@
+title: ViFight TikTok Auto-Poster
+description: 商品PR動画 自動生成・投稿システム / Auto-generated TikTok product PR video system
+
+# テーマ(GitHub Pages 標準サポート)
+theme: jekyll-theme-cayman
+
+# Markdown 設定
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# URL を綺麗にする (.html 拡張子なし)
+permalink: pretty
+
+# 内部運用ドキュメントは公開しない(セキュリティ・運用秘匿)
+exclude:
+  - operation_manual.md
+  - tiktok_app_review.md
+  - .gitkeep
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - "*.log"
+
+# 著者情報
+author:
+  name: ViFight
+  email: playmark0227@gmail.com
+
+# サイト全体
+lang: ja
+timezone: Asia/Tokyo

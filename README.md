@@ -158,10 +158,26 @@ tiktok-auto-poster/
 
 ## ドキュメント
 
+### 公開ドキュメント (GitHub Pages)
+
+GitHub Pages で公開する一般ユーザー向けドキュメント:
+
+- 🌐 サイト: https://playmark0227-svg.github.io/tiktok/
+- [プライバシーポリシー (日本語)](https://playmark0227-svg.github.io/tiktok/privacy_policy_ja/)
+- [Privacy Policy (English)](https://playmark0227-svg.github.io/tiktok/privacy_policy_en/) — TikTok 審査に提出する URL
+
+### 内部ドキュメント (リポジトリ内のみ)
+
 - [運用マニュアル](docs/operation_manual.md)
-- [プライバシーポリシー(日本語)](docs/privacy_policy_ja.md)
-- [Privacy Policy (English)](docs/privacy_policy_en.md)
 - [TikTok 審査申請文](docs/tiktok_app_review.md)
+
+### GitHub Pages の有効化手順
+
+1. GitHub リポジトリ → **Settings** → **Pages**
+2. **Source**: `Deploy from a branch`
+3. **Branch**: `claude/vibrant-brown-eScjj`(または `main` にマージ後 `main`)、 Folder: `/docs`
+4. **Save** をクリック
+5. 1〜2 分後に https://playmark0227-svg.github.io/tiktok/ で公開される
 
 ## ライセンス
 

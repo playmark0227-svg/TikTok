@@ -1,4 +1,14 @@
+---
+layout: default
+title: Privacy Policy
+description: Privacy Policy for ViFight TikTok Auto-Poster
+permalink: /privacy_policy_en/
+lang: en
+---
+
 # Privacy Policy
+
+[← Back to top](/) | [日本語版](/privacy_policy_ja/)
 
 Last updated: May 24, 2026
 
