@@ -69,7 +69,15 @@ class Pipeline:
         self.settings = settings or get_settings()
         self.firestore = firestore or FirestoreClient(self.settings)
         self.selector = selector or ProductSelector(self.settings)
-        self.prompt_client = prompt_client or ClaudeContentClient(self.settings)
+        # content_generator 設定で Claude or Gemini を選択
+        if prompt_client is not None:
+            self.prompt_client = prompt_client
+        elif self.settings.content_generator == "gemini":
+            from src.prompt_generator.gemini_client import GeminiContentClient
+
+            self.prompt_client = GeminiContentClient(self.settings)
+        else:
+            self.prompt_client = ClaudeContentClient(self.settings)
         self.veo_client = veo_client or VeoClient(self.settings)
         self.video_processor = video_processor or VideoProcessor(self.settings)
         self.storage = storage_client or FirebaseStorageClient(self.settings)
@@ -110,19 +118,25 @@ class Pipeline:
             for revision in range(self.settings.max_revision_count + 1):
                 logger.info("生成→承認サイクル", revision=revision, post_id=post_id)
 
-                # 3. 動画生成
-                generated_dir = self.settings.storage_local_dir / "generated"
-                clip_paths = await self.veo_client.generate_clips_for_plan(
-                    plan, generated_dir
-                )
+                # 3. 動画生成 (settings.video_mode で分岐)
+                if self.settings.video_mode == "slideshow":
+                    final_video_path = await self._build_slideshow_video(
+                        plan, product, post_id, revision
+                    )
+                else:
+                    # Veo モード(従来)
+                    generated_dir = self.settings.storage_local_dir / "generated"
+                    clip_paths = await self.veo_client.generate_clips_for_plan(
+                        plan, generated_dir
+                    )
 
-                # 4. 動画編集
-                final_video_path = self.video_processor.process(
-                    clip_paths,
-                    plan,
-                    output_dir=self.settings.storage_local_dir / "edited",
-                    post_id=f"{post_id}_v{revision}",
-                )
+                    # 4. 動画編集
+                    final_video_path = self.video_processor.process(
+                        clip_paths,
+                        plan,
+                        output_dir=self.settings.storage_local_dir / "edited",
+                        post_id=f"{post_id}_v{revision}",
+                    )
 
                 # 5. アップロード
                 upload_result = await self.storage.upload_video(
@@ -212,6 +226,83 @@ class Pipeline:
             return await self.selector.select(recently_posted_ids=recent_ids)
         except NoProductsFoundError:
             return None
+
+    async def _build_slideshow_video(
+        self,
+        plan: ContentPlan,
+        product: Product,
+        post_id: str,
+        revision: int,
+    ) -> Path:
+        """slideshow モード: Gemini で画像生成 → FFmpeg でスライドショー化"""
+        from src.video_editor.pr_overlay import PROverlayBurner
+        from src.video_editor.subtitle_burner import SubtitleBurner
+        from src.video_generator.image_generator import (
+            GeminiImageGenerator,
+            ImageGenerationError,
+        )
+        from src.video_generator.slideshow_builder import (
+            SlideshowBuilder,
+            generate_placeholder_image,
+        )
+
+        slides_dir = self.settings.storage_local_dir / "generated" / post_id
+        edited_dir = self.settings.storage_local_dir / "edited"
+        slides_dir.mkdir(parents=True, exist_ok=True)
+        edited_dir.mkdir(parents=True, exist_ok=True)
+
+        # スライド枚数分の画像プロンプトを Veo 用プロンプトから派生させる
+        subtitle_lines = [s.strip() for s in plan.subtitle_text.split("\n") if s.strip()]
+        n_slides = max(self.settings.slideshow_slide_count, len(subtitle_lines))
+
+        # 画像生成プロンプト(英語、各スライドで角度や雰囲気を変える)
+        base_prompt = plan.veo_prompt_clip1 or product.description
+        slide_prompts = [
+            f"{base_prompt} -- shot variant {i+1}: "
+            + ["studio close-up", "lifestyle scene", "detail focus", "hero shot"][i % 4]
+            + ", vertical 9:16 portrait, photorealistic, soft cinematic lighting, no text, no watermark"
+            for i in range(n_slides)
+        ]
+
+        # 画像生成(失敗したら placeholder にフォールバック)
+        image_paths: list[Path] = []
+        image_gen = GeminiImageGenerator(self.settings)
+        for i, prompt in enumerate(slide_prompts):
+            img_path = slides_dir / f"slide_{i:02d}.png"
+            try:
+                image_gen.generate(prompt, img_path, aspect_ratio="9:16")
+            except ImageGenerationError as e:
+                logger.warning(
+                    "画像生成失敗、placeholder にフォールバック",
+                    index=i,
+                    error=str(e),
+                )
+                title = subtitle_lines[i] if i < len(subtitle_lines) else product.category
+                sub = product.display_title[:40]
+                generate_placeholder_image(img_path, title, sub)
+            image_paths.append(img_path)
+
+        # スライドショー組み立て
+        builder = SlideshowBuilder(
+            slide_duration=self.settings.slideshow_slide_duration,
+            transition_duration=self.settings.slideshow_transition_duration,
+        )
+        raw_path = edited_dir / f"{post_id}_v{revision}_raw.mp4"
+        builder.build(image_paths, raw_path)
+
+        # 字幕焼き込み
+        subbed_path = edited_dir / f"{post_id}_v{revision}_subbed.mp4"
+        try:
+            SubtitleBurner().burn(raw_path, subbed_path, plan.subtitle_text)
+            before_pr = subbed_path
+        except Exception as e:
+            logger.warning("字幕焼き込み失敗", error=str(e))
+            before_pr = raw_path
+
+        # 「広告」表示焼き込み(ステマ規制対応必須)
+        final_path = edited_dir / f"{post_id}_v{revision}_final.mp4"
+        PROverlayBurner().burn(before_pr, final_path, label="広告")
+        return final_path
 
     async def _fetch_few_shots(self) -> list[dict]:
         """過去30日で好成績だった投稿を few-shot に使う"""

@@ -72,6 +72,16 @@ class Settings(BaseSettings):
     target_categories: str = "家電,コスメ,キッチン,健康,ガジェット"
     price_min: int = 1000
     price_max: int = 20000
+
+    # ----- 動画生成モード -----
+    # content_generator: "claude" | "gemini"
+    content_generator: str = "claude"
+    # video_mode: "veo" | "slideshow"  (slideshow: Gemini で静止画生成 → FFmpeg で連結)
+    video_mode: str = "veo"
+    # スライド枚数(slideshow モード時)
+    slideshow_slide_count: int = 4
+    slideshow_slide_duration: float = 2.5
+    slideshow_transition_duration: float = 0.5
     exclude_recent_days: int = 30
 
     # ----- 開発フラグ -----
