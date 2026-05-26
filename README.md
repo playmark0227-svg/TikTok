@@ -97,6 +97,45 @@ python scripts/tiktok_oauth_init.py
 bash scripts/install_launchd.sh
 ```
 
+## 動画生成モード
+
+`.env` の `CONTENT_GENERATOR` と `VIDEO_MODE` で 2 系統に切り替え可能。
+
+### モードA: Veo + Claude(高品質・有料)
+
+```env
+CONTENT_GENERATOR=claude
+VIDEO_MODE=veo
+ANTHROPIC_API_KEY=...
+GEMINI_API_KEY=...     # Veo は Google Cloud billing 必須
+```
+
+- 月コスト目安: 3〜5万円(Veo が高い)
+- 品質: AI 生成の本物の動画クリップ
+
+### モードB: スライドショー + Gemini(低コスト・推奨)
+
+```env
+CONTENT_GENERATOR=gemini
+VIDEO_MODE=slideshow
+GEMINI_API_KEY=...     # 無料 tier で OK(text), 画像生成は billing 推奨
+SLIDESHOW_SLIDE_COUNT=5
+SLIDESHOW_SLIDE_DURATION=2.5
+```
+
+- 月コスト目安: ¥0〜500(Gemini text 無料 tier + 画像 billing 数百円)
+- 品質: TikTok でよく見る商品紹介スライド型
+- 画像生成 billing が無い場合は装飾付きプレースホルダにフォールバック
+
+### 即時実行(launchd 経由ではなく今すぐ動かす)
+
+```bash
+python scripts/run_now.py
+```
+
+- Amazon/楽天 キー未設定でも事前定義サンプル商品で完走可能
+- Firebase / Discord / TikTok キー未設定は自動で dry-run override
+
 ## テスト実行
 
 ```bash

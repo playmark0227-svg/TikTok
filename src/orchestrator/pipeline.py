@@ -279,7 +279,7 @@ class Pipeline:
                 )
                 title = subtitle_lines[i] if i < len(subtitle_lines) else product.category
                 sub = product.display_title[:40]
-                generate_placeholder_image(img_path, title, sub)
+                generate_placeholder_image(img_path, title, sub, palette_index=i)
             image_paths.append(img_path)
 
         # スライドショー組み立て
