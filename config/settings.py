@@ -82,6 +82,12 @@ class Settings(BaseSettings):
     slideshow_slide_count: int = 4
     slideshow_slide_duration: float = 2.5
     slideshow_transition_duration: float = 0.5
+
+    # ----- 品質ガード -----
+    # 企画生成で何案出して最良を選ぶか
+    plan_candidates: int = 3
+    # セーフティゲートの最低品質スコア(0.0〜1.0)
+    min_quality_score: float = 0.4
     exclude_recent_days: int = 30
 
     # ----- 開発フラグ -----

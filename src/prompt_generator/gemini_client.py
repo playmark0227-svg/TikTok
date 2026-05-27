@@ -101,6 +101,48 @@ class GeminiContentClient:
         )
         return plan
 
+    async def generate_best_of(
+        self,
+        product: Product,
+        *,
+        n: int = 3,
+        few_shot_examples: list[dict] | None = None,
+    ) -> ContentPlan:
+        """N 案生成して品質スコア最高のものを返す"""
+        from src.prompt_generator.quality_scorer import score_plan
+
+        if self.settings.is_dry_run or n <= 1:
+            return await self.generate(product, few_shot_examples=few_shot_examples)
+
+        candidates: list[tuple[ContentPlan, dict]] = []
+        for i in range(n):
+            try:
+                plan = await self.generate(product, few_shot_examples=few_shot_examples)
+                scores = score_plan(plan)
+                candidates.append((plan, scores))
+                logger.info(
+                    "Gemini 候補スコア",
+                    iteration=i + 1,
+                    total=round(scores["total"], 3),
+                    safe=bool(scores["is_safe"]),
+                )
+            except Exception as e:
+                logger.warning("Gemini 候補生成失敗", iteration=i + 1, error=str(e))
+
+        if not candidates:
+            raise GeminiAPIError("全候補生成失敗")
+
+        safe = [(p, s) for p, s in candidates if s["is_safe"]]
+        chosen_pool = safe if safe else candidates
+        chosen_pool.sort(key=lambda x: x[1]["total"], reverse=True)
+        best_plan, best_score = chosen_pool[0]
+        logger.info(
+            "ベスト案選定",
+            total=round(best_score["total"], 3),
+            from_n=len(candidates),
+        )
+        return best_plan
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=2, min=2, max=10),

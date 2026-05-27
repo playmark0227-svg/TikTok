@@ -14,7 +14,9 @@ import tempfile
 from pathlib import Path
 
 from src.utils.logger import get_logger
+from src.utils.text import strip_emoji
 from src.video_editor.subtitle_burner import find_default_font
+from src.video_generator.effects import pick_effect, pick_transition
 
 logger = get_logger(__name__)
 
@@ -112,21 +114,10 @@ class SlideshowBuilder:
         )
 
         if ken_burns:
-            zoom_in = index % 2 == 0
-            total_frames = int(self.slide_duration * self.fps)
-            if zoom_in:
-                zoom_expr = "min(zoom+0.0015,1.15)"
-            else:
-                zoom_expr = "if(eq(on,0),1.15,max(zoom-0.0015,1.0))"
-            x_expr = "iw/2-(iw/zoom/2)"
-            y_expr = "ih/2-(ih/zoom/2)"
-
-            zoompan = (
-                f"zoompan=z='{zoom_expr}':d={total_frames}:"
-                f"x='{x_expr}':y='{y_expr}':"
-                f"s={self.width}x{self.height}:fps={self.fps}"
-            )
-            vf = f"{cover_filter},{zoompan}"
+            # 多様なエフェクト(slide index でローテーション)
+            effect = pick_effect(index)
+            vf = effect.vf_builder(self.width, self.height, self.slide_duration, self.fps)
+            logger.debug("エフェクト適用", index=index, effect=effect.name)
         else:
             vf = cover_filter
 
@@ -169,8 +160,9 @@ class SlideshowBuilder:
             v_out = f"[v{i}]"
             a_out = f"[a{i}]"
             offset = cumulative_offset
+            transition = pick_transition(i - 1)
             filter_lines.append(
-                f"{video_label}[{i}:v]xfade=transition=fade:"
+                f"{video_label}[{i}:v]xfade=transition={transition}:"
                 f"duration={self.transition_duration}:offset={offset}{v_out}"
             )
             filter_lines.append(
@@ -232,6 +224,10 @@ def generate_placeholder_image(
     from PIL import Image, ImageDraw, ImageFont
 
     output.parent.mkdir(parents=True, exist_ok=True)
+
+    # 絵文字は描画できないので除去
+    title = strip_emoji(title)
+    subtitle = strip_emoji(subtitle)
 
     palette = PALETTES[palette_index % len(PALETTES)]
     bg_top, bg_bottom, accent_color, text_color = palette

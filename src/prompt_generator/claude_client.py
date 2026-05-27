@@ -77,7 +77,7 @@ class ClaudeContentClient:
         *,
         few_shot_examples: list[dict] | None = None,
     ) -> ContentPlan:
-        """商品から ContentPlan を生成"""
+        """商品から ContentPlan を生成(単一案)"""
         logger.info("企画生成開始", product_id=product.product_id, title=product.display_title)
 
         if self.settings.is_dry_run:
@@ -93,6 +93,51 @@ class ClaudeContentClient:
             hashtag_count=len(plan.hashtags),
         )
         return plan
+
+    async def generate_best_of(
+        self,
+        product: Product,
+        *,
+        n: int = 3,
+        few_shot_examples: list[dict] | None = None,
+    ) -> ContentPlan:
+        """N 案生成して品質スコア最高のものを返す"""
+        from src.prompt_generator.quality_scorer import score_plan
+
+        if self.settings.is_dry_run or n <= 1:
+            return await self.generate(product, few_shot_examples=few_shot_examples)
+
+        candidates: list[tuple[ContentPlan, dict]] = []
+        for i in range(n):
+            try:
+                plan = await self.generate(product, few_shot_examples=few_shot_examples)
+                scores = score_plan(plan)
+                candidates.append((plan, scores))
+                logger.info(
+                    "候補スコア",
+                    iteration=i + 1,
+                    total=round(scores["total"], 3),
+                    hook=round(scores["caption_hook"], 3),
+                    emotion=round(scores["caption_emotion"], 3),
+                    safe=bool(scores["is_safe"]),
+                )
+            except Exception as e:
+                logger.warning("候補生成失敗", iteration=i + 1, error=str(e))
+
+        if not candidates:
+            raise ClaudeAPIError("全候補生成失敗")
+
+        # 法的安全な候補を優先、その中でtotal最高
+        safe = [(p, s) for p, s in candidates if s["is_safe"]]
+        chosen_pool = safe if safe else candidates
+        chosen_pool.sort(key=lambda x: x[1]["total"], reverse=True)
+        best_plan, best_score = chosen_pool[0]
+        logger.info(
+            "ベスト案選定",
+            total=round(best_score["total"], 3),
+            from_n=len(candidates),
+        )
+        return best_plan
 
     @retry(
         stop=stop_after_attempt(3),
@@ -236,34 +281,37 @@ class ClaudeContentClient:
         return normalized
 
     def _dry_run_plan(self, product: Product) -> ContentPlan:
-        """DRY_RUN 用ダミー企画"""
+        """DRY_RUN 用ダミー企画(本番品質のサンプル)"""
         return ContentPlan(
             veo_prompt_clip1=(
-                f"A vertical 9:16 video, 8 seconds. A modern {product.category} product "
-                "is placed on a clean white studio surface. Soft cinematic lighting with "
-                "subtle highlights. The camera slowly tracks in. Energetic background music."
+                f"A vertical 9:16 video, 8 seconds. A young woman in her 20s reacts with "
+                f"frustration trying to do {product.category}-related task the old way. "
+                "Quick zoom into her face showing the problem. Modern bright kitchen/bedroom."
             ),
             veo_prompt_clip2=(
-                "A vertical 9:16 video, 8 seconds. A person in their 20s in a bright "
-                "modern room demonstrates using the product. Soft natural light, warm tones. "
-                "Quick cuts emphasize the result. Light upbeat music."
+                "A vertical 9:16 video, 8 seconds. The same woman tries a sleek modern "
+                "product (no visible brand). Smooth result, satisfied smile, holds up the "
+                "finished product. Bright natural light, upbeat music synced to cuts."
             ),
             caption=(
-                f"これは便利✨ 話題の{product.category}アイテム、もう試した?\n"
-                f"レビュー{product.review_count}件超え!プチプラで毎日が変わる💫"
+                f"コレ知らない人マジで損してる🚨 レビュー{product.review_count}件超えの"
+                f"{product.category}、買ってからもう手放せない。在庫薄くなってきてるから"
+                "気になる人は早めに見てきて。コメ欄にリンク貼っとくね📌"
             ),
             hashtags=[
                 "#PR",
                 "#広告",
                 f"#{product.category}",
-                "#おすすめ",
-                "#便利グッズ",
                 "#TikTok購入品",
+                "#知らないと損",
+                "#本当に買ってよかったもの",
+                "#バズり中",
+                "#時短",
+                "#一人暮らし",
                 "#新生活",
-                "#暮らしを整える",
             ],
-            subtitle_text="知らないと損する\n話題のアイテム\nプロフリンクから",
+            subtitle_text="コレ知らない?🚨\nマジで人生変わる\n在庫切れ続出中\nコメ欄にリンク",
             bgm_mood="upbeat",
-            voice_style="energetic friendly",
+            voice_style="energetic Gen-Z female narrator",
             raw_response="[DRY_RUN] dummy plan",
         )
