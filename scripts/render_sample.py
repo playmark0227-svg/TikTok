@@ -19,6 +19,30 @@ from src.utils.logger import configure_logging  # noqa: E402
 from src.video_generator.engine import SlideshowEngine  # noqa: E402
 
 
+def _make_sample_product_photo(path: Path) -> Path:
+    """擬似商品写真(白背景にスチーマー風シルエット)。
+    本番では Amazon/楽天 の実画像 URL に置き換わる。"""
+    from PIL import Image, ImageDraw
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    w, h = 900, 900
+    img = Image.new("RGB", (w, h), (248, 248, 250))
+    d = ImageDraw.Draw(img)
+    # 本体
+    d.rounded_rectangle([360, 280, 540, 620], radius=40, fill=(70, 90, 160))
+    # ヘッド部
+    d.rounded_rectangle([330, 200, 570, 320], radius=30, fill=(90, 110, 190))
+    # スチーム穴
+    for cx in range(370, 540, 40):
+        d.ellipse([cx, 235, cx + 16, 251], fill=(210, 220, 240))
+    # ハンドル
+    d.rounded_rectangle([420, 600, 480, 760], radius=24, fill=(50, 60, 110))
+    # 影
+    d.ellipse([330, 770, 570, 820], fill=(225, 225, 230))
+    img.save(path, quality=90)
+    return path
+
+
 async def main() -> int:
     configure_logging()
 
@@ -30,13 +54,19 @@ async def main() -> int:
         slideshow_slide_duration=2.5,
     )
 
+    # 実商品画像のスタンドイン(本番では Amazon/楽天 API の image_urls)
+    # この環境はネットワーク遮断のため、ローカルに擬似商品写真を作り file:// で渡す
+    sample_photo = _make_sample_product_photo(
+        settings.storage_local_dir / "generated" / "sample_product.jpg"
+    )
+
     product = Product(
         source="amazon",
         product_id="B0SAMPLE001",
         title="衣類スチーマー ハンディアイロン コードレス 旅行 出張",
         description="コードレスで15秒で立ち上がる衣類スチーマー",
         price=4980,
-        image_urls=[],
+        image_urls=[f"file://{sample_photo}"],
         review_count=1342,
         rating=4.4,
         category="家電",
